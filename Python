@@ -1,0 +1,252 @@
+# -*- coding: utf-8 -*-
+# Fisier: calculator_logic.py
+
+# --- DATE DIN STANDARDE (DIN PDF-URILE FURNIZATE) ---
+
+# [SURSĂ: 'zona climatica.pdf', Anexa 3.1, LEGENDA] [cite: 332, 336, 339, 343, 348, 355]
+ZONE_TEMPERATURI_EXTERIOARE = {
+    "Zona I": -12,
+    "Zona II": -15,
+    "Zona III": -18,
+    "Zona IV": -21
+}
+
+# [SURSĂ: 'zona climatica.pdf', Anexa 3.1, Harta]
+# Am mapat principalele orașe la zona lor. Această listă poate fi extinsă.
+DATE_CLIMATICE_LOCALITATI = {
+    "Constanta": {"zona_temp": "Zona I"}, # [cite: 442]
+    "Mangalia": {"zona_temp": "Zona I"}, # [cite: 443]
+    "Bucuresti": {"zona_temp": "Zona II"}, # [cite: 420]
+    "Ploiesti": {"zona_temp": "Zona II"}, # [cite: 420]
+    "Calarasi": {"zona_temp": "Zona II"}, # [cite: 420]
+    "Slobozia": {"zona_temp": "Zona II"}, # [cite: 420]
+    "Timisoara": {"zona_temp": "Zona II"}, # [cite: 397]
+    "Arad": {"zona_temp": "Zona II"}, # [cite: 378]
+    "Craiova": {"zona_temp": "Zona II"}, # [cite: 427]
+    "Iasi": {"zona_temp": "Zona II"}, # [cite: 360]
+    "Galati": {"zona_temp": "Zona II"}, # [cite: 418]
+    "Bacau": {"zona_temp": "Zona II"}, # [cite: 390]
+    "Buzau": {"zona_temp": "Zona II"}, # [cite: 420]
+    "Oradea": {"zona_temp": "Zona III"}, # [cite: 373]
+    "Baia Mare": {"zona_temp": "Zona III"}, # [cite: 338]
+    "Satu Mare": {"zona_temp": "Zona III"}, # [cite: 329]
+    "Suceava": {"zona_temp": "Zona III"}, # [cite: 335]
+    "Ramnicu Valcea": {"zona_temp": "Zona III"}, # [cite: 415]
+    "Pitesti": {"zona_temp": "Zona III"}, # [cite: 416]
+    "Targoviste": {"zona_temp": "Zona III"}, # [cite: 420]
+    "Cluj-Napoca": {"zona_temp": "Zona IV"}, # [cite: 379]
+    "Brasov": {"zona_temp": "Zona IV"}, # [cite: 413]
+    "Sibiu": {"zona_temp": "Zona IV"}, # [cite: 392]
+    "Miercurea Ciuc": {"zona_temp": "Zona IV"}, # [cite: 388]
+    "Targu Mures": {"zona_temp": "Zona IV"}, # [cite: 387]
+    "Bistrita": {"zona_temp": "Zona IV"}, # [cite: 362]
+    "Petrosani": {"zona_temp": "Zona IV"}, # [cite: 395]
+    "Vatra Dornei": {"zona_temp": "Zona IV"}, # [cite: 354]
+}
+
+# [SURSĂ: 'temperaturi de calcul.pdf', Anexa 3.3] [cite: 101]
+TEMP_INTERIOARE = {
+    "Selectati...": 20,
+    "Locuinte - Camera de locuit / Hol": 20,
+    "Locuinte - Baie / Dus": 22,
+    "Locuinte - Bucatarie": 18,
+    "Locuinte - Vestibul": 18,
+    "Locuinte - Casa scarii (ext. apartament)": 10,
+    "Birouri": 20,
+    "Sali de conferinte": 18,
+    "Biblioteci / Sali de lectura": 20,
+    "Scoli - Clase": 18,
+    "Scoli - Laboratoare": 18,
+    "Scoli - Ateliere": 18,
+    "Scoli - Sali de educatie fizica": 18,
+    "Crese - Camere de joc": 22,
+    "Crese - Dormitoare": 20,
+    "Crese - Bai si dusuri copii": 24,
+    "Gradinite - Camere de joc": 20,
+    "Hoteluri - Camere": 20,
+    "Hoteluri - Bai si dusuri": 22,
+    "Spitale - Saloane bolnavi": 22,
+    "Spitale - Sali de operatie": 25,
+    "Spitale - Saloane sugari": 24,
+    "Restaurante / Sali de mese": 18,
+    "Magazine - Alimentare": 15,
+    "Magazine - Nealimentare": 18,
+    "Hale bazine de inot": 28 # Exemplu [cite: 141]
+}
+
+# [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Anexa B.2.4, Tabel B.2] [cite: 1903]
+# Factori de corecție 'f1' (b_u) pentru spații adiacente neîncălzite
+FACTORI_CORECTIE_NEINCALZIT = {
+    "Pod (acoperis izolat)": 0.7,
+    "Pod (acoperis neizolat)": 0.9,
+    "Pivnita (fara usi/ferestre)": 0.5,
+    "Pivnita (cu usi/ferestre)": 0.8,
+    "Casa scarii (3+ pereti ext)": 0.8,
+    "Spatiu tehnic (pardoseala suspendata)": 0.8
+}
+
+# [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Anexa B.2.1, Tabel B.1] [cite: 1886]
+PUNTI_TERMICE_DELTA_U = {
+    "Cladire noua (izolare buna)": 0.05,
+    "Cladire veche (izolare interioara)": 0.15,
+    "Toate celelalte (Default)": 0.10,
+    "Fara punti termice (Calcul detaliat)": 0.0
+}
+
+# [SURSĂ: '09_21_2_C_107_2013_completare_1.pdf', Anexa 3, Pag. 4] [cite: 70]
+STANDARDE_C107_UMAX = {
+    "Perete Exterior": 0.56,
+    "Tamplarie Exterioara (Fereastra / Usa)": 1.30,
+    "Tavan (Sub pod / terasa)": 0.20,
+    "Podea (Peste subsol neincalzit)": 0.35,
+    "Podea (Placa pe sol)": 0.22,
+    "Podea (Peste gang trecere)": 0.22,
+    "Perete Interior": 99.0, # Nu se normeaza
+    "Podea (Peste camera incalzita)": 99.0, # Nu se normeaza
+    "Tavan (Sub camera incalzita)": 99.0 # Nu se normeaza
+}
+
+# [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Anexa B.4.1, Tabel B.13] [cite: 2039]
+# [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', B.2.8] [cite: 1931]
+# [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', B.2.11, Tabel B.7] 
+VALORI_DEFAULT = {
+    "TEMP_MEDIE_ANUALA_SOL": 10.0, # Valoare general acceptată pentru România
+    "CAPACITATE_TERMICA_AER": 0.34, # [cite: 1931]
+    "N_MIN_DEFAULT": 0.5, # Rata de schimb aer 
+    "PUTERE_PREINCALZIRE_DEFAULT": 0.0 # W/m2 [cite: 2007]
+}
+
+def calculeaza_necesar_camera(date_camera):
+    """
+    "Motorul" de calcul principal.
+    Calculează necesarul de căldură (Wați) pentru o cameră.
+    """
+    try:
+        # --- PASUL 1: Extragere Date de Intrare ---
+        localitate = date_camera['localitate']
+        tip_incapere = date_camera['tip_incapere']
+        volum = float(date_camera['volum'])
+        suprafata_podea = float(date_camera['suprafata_podea'])
+        
+        # Date optionale
+        rata_n_min = float(date_camera.get('rata_schimb_aer_n_min') or VALORI_DEFAULT['N_MIN_DEFAULT'])
+        phi_hu_specific = float(date_camera.get('putere_preincalzire_specifica') or VALORI_DEFAULT['PUTERE_PREINCALZIRE_DEFAULT'])
+        categorie_punti = date_camera.get('categorie_punti_termice') or "Toate celelalte (Default)"
+
+        elemente = date_camera['elemente']
+        
+        # --- PASUL 2: Stabilire Parametri de Calcul (Temperaturi) ---
+        
+        # T_int (Theta_i) [SURSĂ: 'temperaturi de calcul.pdf', Anexa 3.3] [cite: 101]
+        T_int = TEMP_INTERIOARE.get(tip_incapere, 20)
+        
+        # T_ext (Theta_e) [SURSĂ: 'zona climatica.pdf', Anexa 3.1] [cite: 332-355]
+        date_loc = DATE_CLIMATICE_LOCALITATI.get(localitate)
+        if not date_loc:
+            raise ValueError(f"Localitatea '{localitate}' nu a fost gasita in baza de date.")
+        
+        T_ext = ZONE_TEMPERATURI_EXTERIOARE.get(date_loc['zona_temp'], -15)
+        
+        # Delta T total (Interior - Exterior)
+        delta_T_total = T_int - T_ext
+        
+        # Delta U Punti Termice (Delta_U_TB) [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Tabel B.1] [cite: 1886]
+        delta_U_TB = PUNTI_TERMICE_DELTA_U.get(categorie_punti, 0.10)
+
+        total_Phi_T = 0.0
+        raport_conformitate = []
+
+        # --- PASUL 3: Calcul Pierderi prin Transmisie (Phi_T) ---
+        # [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Art. 6.3.2] [cite: 866-985]
+        
+        for i, el in enumerate(elemente):
+            descriere = el.get('descriere') or f"Element {i+1}"
+            A_k = float(el['suprafata'])
+            U_k = float(el['valoare_u'])
+            tip_element = el['tip_element']
+            tip_adiacenta = el['tip_adiacenta']
+
+            factor_f_ix = 0.0  # Factorul de corecție a temperaturii [cite: 984]
+            U_calcul = U_k
+            
+            # [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Art. 6.3.2.5, Relația (10) și Tabel 7] [cite: 994, 1000, 1013]
+            if tip_adiacenta == "Exterior":
+                factor_f_ix = 1.0 # f1 = (Ti - Te) / (Ti - Te) [cite: 1013]
+                # Punțile termice se adaugă doar la elementele spre exterior [cite: 896]
+                U_calcul = U_k + delta_U_TB 
+            
+            elif tip_adiacenta == "Sol":
+                # f1 = (Ti - Tem) / (Ti - Te) [cite: 1013]
+                T_sol = VALORI_DEFAULT['TEMP_MEDIE_ANUALA_SOL']
+                factor_f_ix = (T_int - T_sol) / delta_T_total
+            
+            elif tip_adiacenta == "Alta Camera Incalzita":
+                T_adj = float(el.get('temp_adiacenta') or T_int)
+                # f1 = (Ti - Tadj) / (Ti - Te) [cite: 1013]
+                factor_f_ix = (T_int - T_adj) / delta_T_total
+            
+            elif tip_adiacenta in FACTORI_CORECTIE_NEINCALZIT:
+                # Folosim valorile 'prin lipsă' f1 din Tabelul B.2 [cite: 1903]
+                factor_f_ix = FACTORI_CORECTIE_NEINCALZIT[tip_adiacenta]
+            
+            # Formula de calcul a pierderii pentru elementul 'k'
+            # Phi_T,k = A_k * U_k_corectat * f_ix * (T_int - T_ext)
+            # Aceasta este echivalentă cu A_k * U_k * (T_int - T_adj)
+            Phi_T_element = A_k * U_calcul * factor_f_ix * delta_T_total
+            total_Phi_T += Phi_T_element
+
+            # Verificare conformitate C 107 [SURSĂ: '09_21_2_C_107_2013_completare_1.pdf', Anexa 3] [cite: 70]
+            U_max_standard = STANDARDE_C107_UMAX.get(tip_element, 99.0)
+            status_conformitate = "N/A"
+            if U_max_standard != 99.0:
+                # Comparam U_k (in camp curent) cu standardul. 
+                # NOTĂ: C107 specifică U'max (corectat)[cite: 71, 72]. O comparatie corecta ar fi (U_k + delta_U_TB) <= U_max_standard
+                U_corectat_element = U_k + delta_U_TB if tip_adiacenta == "Exterior" else U_k
+                status_conformitate = "CONFORM" if U_corectat_element <= U_max_standard else "NECONFORM"
+
+            raport_conformitate.append({
+                "descriere": descriere,
+                "tip_element": tip_element,
+                "U_introdus": U_k,
+                "U_max_C107": U_max_standard if U_max_standard != 99.0 else "-",
+                "status": status_conformitate
+            })
+
+        # --- PASUL 4: Calcul Pierderi prin Ventilatie (Phi_V) ---
+        # [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Art. 7.3.3, Relația (53)] [cite: 1532]
+        # Folosim metoda simplificată (Art 7) / (Art 6.3.3.2) care se bazează pe rata minimă de schimb de aer.
+        # Phi_V = V_i * n_i * (rho*cp) * (T_int - T_ext)
+        Phi_V = volum * rata_n_min * VALORI_DEFAULT['CAPACITATE_TERMICA_AER'] * delta_T_total # [cite: 1532, 1541, 1200]
+
+        # --- PASUL 5: Calcul Putere Suplimentară Preîncălzire (Phi_hu) ---
+        # [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Art. 6.3.4, Relația (39)] [cite: 1281]
+        # Phi_hu = A_podea * phi_hu_specific
+        Phi_hu = suprafata_podea * phi_hu_specific
+        
+        # --- PASUL 6: Calcul Final ---
+        # [SURSĂ: 'SR EN 12831-1_2017_student.pdf.pdf', Art. 6.3.1.3, Relația (3)] [cite: 862]
+        # Phi_HL,i = Phi_T,i + Phi_V,i + Phi_hu,i
+        Phi_HL_total = total_Phi_T + Phi_V + Phi_hu
+
+        rezultat = {
+            "succes": True,
+            "Phi_HL_total_W": round(Phi_HL_total, 2),
+            "Phi_HL_total_kW": round(Phi_HL_total / 1000, 2),
+            "detaliere": {
+                "Phi_T_transmisie": round(total_Phi_T, 2),
+                "Phi_V_ventilatie": round(Phi_V, 2),
+                "Phi_hu_preincalzire": round(Phi_hu, 2)
+            },
+            "parametri": {
+                "localitate": localitate,
+                "tip_incapere": tip_incapere,
+                "T_int": T_int,
+                "T_ext": T_ext,
+                "delta_T_total": delta_T_total
+            },
+            "raport_c107": raport_conformitate
+        }
+        return rezultat
+
+    except Exception as e:
+        return {"succes": False, "eroare": str(e)}
